@@ -28,7 +28,7 @@ contract P2PNFT is ERC1155 {
     function initilizeNFT(bytes memory _signatures, bytes32 _rawMessageHash, address[] memory addresses) external {
         // number of signatures has to match number of participants
         uint256 _noParticipants = addresses.length;
-        require(_signatures.length == _noParticipants * 65, "inadequate signatures");
+        //require(_signatures.length == _noParticipants * 65, "inadequate signatures");
         uint256 tokenId = _tokenIdCounter.current();
         for (uint256 i = 0; i < _noParticipants; i++) {
             (uint8 v, bytes32 r, bytes32 s) = signaturesSplit(_signatures, i);
@@ -57,7 +57,7 @@ contract P2PNFT is ERC1155 {
 
     // real message never live on chain due to its size constraint
     function getMessageHash(address[] memory addresses, bytes32 _rawMessageHash) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(addresses, _rawMessageHash));
+        return keccak256(abi.encode(addresses, _rawMessageHash));
     }
     function getEthSignedMessageHash(bytes32 _messageHash)
         public

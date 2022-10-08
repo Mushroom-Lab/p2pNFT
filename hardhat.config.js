@@ -2,8 +2,8 @@
 * @type import(‘hardhat/config’).HardhatUserConfig
 */
 
-// npx hardhat verify 0xA5c4CF3fC74b6eA5e35cCF3DFb2592cE4A162d6c --network mumbai/goerli
-// npx hardhat run --network optimism/mumbai scripts/deploy.js
+// npx hardhat verify 0xA5c4CF3fC74b6eA5e35cCF3DFb2592cE4A162d6c --network [mumbai|goerliOptimism]
+// npx hardhat run --network [goerliOptimism|mumbai] scripts/deploy.js
 require("dotenv").config();
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-etherscan");

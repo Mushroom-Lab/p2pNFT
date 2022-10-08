@@ -30,9 +30,10 @@ rawMessageHash = Web3.keccak(text=message)
 
 # noOfParticipant = 2
 
-abiEncoded = eth_abi.encode_abi(['address[]memory', 'bytes32'], [[ac1.address,ac2.address], rawMessageHash])
+abiEncoded = eth_abi.encode_abi(['address[]', 'bytes32'], [[ac1.address,ac2.address], rawMessageHash])
 hashed = Web3.solidityKeccak(['bytes'], ['0x' + abiEncoded.hex()]).hex()
 
+#0x8f5cfeee1e97fda7ffd139aaef1e16cb26e18ceeae10087faa0717e2f215b5b7?
 message = encode_defunct(hexstr=hashed)
 ac1_signed = w3.eth.account.sign_message(message, private_key=ac1_private_key)
 ac2_signed = w3.eth.account.sign_message(message, private_key=ac2_private_key)
@@ -42,13 +43,13 @@ print(w3.eth.account.recover_message(message, signature=ac1_signed.signature))
 print(w3.eth.account.recover_message(message, signature=ac2_signed.signature))
 
 #good example
-tx = P2PNFT[0].initilizeNFT(ac1_signed.signature + ac2_signed.signature, rawMessageHash, noOfParticipant, [ac1.address ,ac2.address], {'from': admin})
+tx = P2PNFT[0].initilizeNFT(ac1_signed.signature + ac2_signed.signature, rawMessageHash, [ac1.address ,ac2.address], {'from': ac2})
 print(tx.events)
 print(P2PNFT[0].p2pwhitelist(0,ac1))
 print(P2PNFT[0].p2pwhitelist(0, ac2))
 # pass
-P2PNFT[0].mint(0, ac1, {'from': admin})
-P2PNFT[0].mint(0, ac2, {'from': admin})
+P2PNFT[0].mint(0, ac1, {'from': ac2})
+P2PNFT[0].mint(0, ac2, {'from': ac2})
 print(P2PNFT[0].balanceOf(ac1,0))
 
 # revert not whitelisted
