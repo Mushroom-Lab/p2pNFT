@@ -3,11 +3,14 @@ pragma solidity ^0.8.4;
 // Made with Love by Dennison Bertram @Tally.xyz
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
-contract P2PNFT is ERC721, Ownable, EIP712, ERC721Votes {
+
+error WrongResolvedAddress(address resolved, address targeted);
+
+
+contract P2PNFT is ERC721, EIP712, ERC721Votes {
     using Counters
     for Counters.Counter;
     Counters.Counter private _tokenIdCounter;
@@ -15,7 +18,8 @@ contract P2PNFT is ERC721, Ownable, EIP712, ERC721Votes {
     // a mapping that map each token => address => canMint
     mapping (uint256 => mapping (address => bool)) public p2pwhitelist;
 
-    event TokenInitialized(uint256 indexed token_Id, bytes32 message, bytes _signatures);
+    event TokenInitializedAddress(uint256 indexed token_Id, address _address);
+    event TokenInitialized(uint256 indexed token_Id, bytes32 _rawMessageHash);
 
     constructor() ERC721("P2PNFT", "P2P") EIP712("P2PNFT", "1") {}
 
@@ -25,26 +29,35 @@ contract P2PNFT is ERC721, Ownable, EIP712, ERC721Votes {
 
     // anyone can mint anything as long as they have all the signature from particpiant
 
-    function initilizeNFT(bytes memory _signatures, bytes32 _messageHash, uint256 _noParticipants) external {
+    function initilizeNFT(bytes memory _signatures, bytes32 _rawMessageHash, uint256 _noParticipants, address[] memory addresses) external {
         // number of signatures has to match number of participants
-        require(_signatures.length >= _noParticipants * 65, "inadequate signatures");
+        require(_signatures.length == _noParticipants * 65, "inadequate signatures");
         uint256 tokenId = _tokenIdCounter.current();
         for (uint256 i = 0; i < _noParticipants; i++) {
             (uint8 v, bytes32 r, bytes32 s) = signaturesSplit(_signatures, i);
+            bytes32 _messageHash = getMessageHash(_noParticipants, _rawMessageHash);
             bytes32 _ethSignedMessageHash = getEthSignedMessageHash(_messageHash);
-            require(_messageHash == _ethSignedMessageHash, "signed message is different from the given message");
             address p = ecrecover(_ethSignedMessageHash, v, r, s);
+            if (p != addresses[i]) {
+                 revert WrongResolvedAddress(p, addresses[i]);
+            }
+
             p2pwhitelist[tokenId][p] = true;
+            emit TokenInitializedAddress(tokenId, p);
         }
-        emit TokenInitialized(tokenId, _messageHash, _signatures);
         _tokenIdCounter.increment();
+        emit TokenInitialized(tokenId, _rawMessageHash);
     }
 
     function mint(uint256 tokenId, address to) external {
         require(p2pwhitelist[tokenId][to], "not whitelist");
-        _mint(to, tokenId);
+        super._mint(to, tokenId);
     }
 
+    // real message never live on chain due to its size constraint
+    function getMessageHash(uint256 _noParticipant, bytes32 _rawMessageHash) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(_noParticipant, _rawMessageHash));
+    }
     function getEthSignedMessageHash(bytes32 _messageHash)
         public
         pure
@@ -58,26 +71,6 @@ contract P2PNFT is ERC721, Ownable, EIP712, ERC721Votes {
             keccak256(
                 abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash)
             );
-    }
-
-    function verify(
-        address _signer,
-        bytes32 messageHash,
-        bytes memory signature
-    ) public pure returns (bool) {
-        bytes32 ethSignedMessageHash = getEthSignedMessageHash(messageHash);
-
-        return recoverSigner(ethSignedMessageHash, signature) == _signer;
-    }
-
-    function recoverSigner(bytes32 _ethSignedMessageHash, bytes memory _signature)
-        public
-        pure
-        returns (address)
-    {
-        (bytes32 r, bytes32 s, uint8 v) = splitSignature(_signature);
-
-        return ecrecover(_ethSignedMessageHash, v, r, s);
     }
 
     function splitSignature(bytes memory sig)
