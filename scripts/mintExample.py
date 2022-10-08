@@ -49,8 +49,12 @@ print(P2PNFT[0].p2pwhitelist(0, ac2))
 # pass
 P2PNFT[0].mint(0, ac1, {'from': admin})
 P2PNFT[0].mint(0, ac2, {'from': admin})
-print(P2PNFT[0].balanceOf(ac1))
+print(P2PNFT[0].balanceOf(ac1,0))
 
-# revert
+# revert not whitelisted
 P2PNFT[0].mint(0, ac3, {'from': admin})
+# already minted
+P2PNFT[0].mint(0, ac1, {'from': admin})
 
+# soulbound
+P2PNFT[0].safeTransferFrom(ac1, ac3, 0, 1, "", {'from' : ac1})

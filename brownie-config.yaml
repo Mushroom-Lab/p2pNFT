@@ -5,3 +5,4 @@ compiler:
       - "@openzeppelin=/Users/chriswong/.brownie/packages/OpenZeppelin/openzeppelin-contracts@4.6.0"
 dependencies:
   - OpenZeppelin/openzeppelin-contracts@4.6.0
+dev_deployment_artifacts: true

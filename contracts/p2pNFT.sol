@@ -1,16 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 // Made with Love by Dennison Bertram @Tally.xyz
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/draft-ERC721Votes.sol";
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/utils/cryptography/draft-EIP712.sol";
 
 
 error WrongResolvedAddress(address resolved, address targeted);
 
 
-contract P2PNFT is ERC721, EIP712, ERC721Votes {
+contract P2PNFT is ERC1155 {
     using Counters
     for Counters.Counter;
     Counters.Counter private _tokenIdCounter;
@@ -21,11 +19,8 @@ contract P2PNFT is ERC721, EIP712, ERC721Votes {
     event TokenInitializedAddress(uint256 indexed token_Id, address _address);
     event TokenInitialized(uint256 indexed token_Id, bytes32 _rawMessageHash);
 
-    constructor() ERC721("P2PNFT", "P2P") EIP712("P2PNFT", "1") {}
+    constructor() ERC1155("https://www.myapp123.com") {}
 
-    function _baseURI() internal pure override returns(string memory) {
-        return "<https://www.myapp.com/>";
-    }
 
     // anyone can mint anything as long as they have all the signature from particpiant
 
@@ -51,7 +46,8 @@ contract P2PNFT is ERC721, EIP712, ERC721Votes {
 
     function mint(uint256 tokenId, address to) external {
         require(p2pwhitelist[tokenId][to], "not whitelist");
-        super._mint(to, tokenId);
+        require(balanceOf(to,tokenId) == 0, "already minted");
+        super._mint(to, tokenId, 1, "");
     }
 
     // real message never live on chain due to its size constraint
@@ -132,16 +128,16 @@ contract P2PNFT is ERC721, EIP712, ERC721Votes {
 
     // soulbound features
     // The following functions are overrides required by Solidity.
-    function _afterTokenTransfer(address from, address to, uint256 tokenId)
+    function _afterTokenTransfer(address operator, address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data)
     internal
-    override(ERC721, ERC721Votes) {
-        super._afterTokenTransfer(from, to, tokenId);
+    override(ERC1155) {
+        super._afterTokenTransfer(operator, address(0), to, ids, amounts, data);
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId)
+    function _beforeTokenTransfer(address operator, address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data)
     internal
-    override(ERC721) {
+    override(ERC1155) {
         require(from == address(0), "Err: token is SOUL BOUND");
-        super._beforeTokenTransfer(from, to, tokenId);
+        super._beforeTokenTransfer(operator, address(0), to, ids, amounts, data);
     }
 }
