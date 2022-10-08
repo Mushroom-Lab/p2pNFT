@@ -37,6 +37,7 @@ contract P2PNFT is ERC721, Ownable, EIP712, ERC721Votes {
             p2pwhitelist[tokenId][p] = true;
         }
         emit TokenInitialized(tokenId, _messageHash, _signatures);
+        _tokenIdCounter.increment();
     }
 
     function mint(uint256 tokenId, address to) external {
