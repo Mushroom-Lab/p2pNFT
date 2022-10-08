@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
-// Made with Love by Dennison Bertram @Tally.xyz
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
 
 error WrongResolvedAddress(address resolved, address targeted);
-
+error HashAlreadyMinted(bytes32 _rawMessageHash, address signer);
 
 contract P2PNFT is ERC1155 {
     using Counters
@@ -15,6 +14,8 @@ contract P2PNFT is ERC1155 {
 
     // a mapping that map each token => address => canMint
     mapping (uint256 => mapping (address => bool)) public p2pwhitelist;
+    // a mapping thatv map each Hash to addrees => is consumed
+    mapping (bytes32 => mapping (address => bool)) public isHashUsed;
 
     event TokenInitializedAddress(uint256 indexed token_Id, address _address);
     event TokenInitialized(uint256 indexed token_Id, bytes32 _rawMessageHash);
@@ -24,19 +25,23 @@ contract P2PNFT is ERC1155 {
 
     // anyone can mint anything as long as they have all the signature from particpiant
 
-    function initilizeNFT(bytes memory _signatures, bytes32 _rawMessageHash, uint256 _noParticipants, address[] memory addresses) external {
+    function initilizeNFT(bytes memory _signatures, bytes32 _rawMessageHash, address[] memory addresses) external {
         // number of signatures has to match number of participants
+        uint256 _noParticipants = addresses.length;
         require(_signatures.length == _noParticipants * 65, "inadequate signatures");
         uint256 tokenId = _tokenIdCounter.current();
         for (uint256 i = 0; i < _noParticipants; i++) {
             (uint8 v, bytes32 r, bytes32 s) = signaturesSplit(_signatures, i);
-            bytes32 _messageHash = getMessageHash(_noParticipants, _rawMessageHash);
+            bytes32 _messageHash = getMessageHash(addresses, _rawMessageHash);
             bytes32 _ethSignedMessageHash = getEthSignedMessageHash(_messageHash);
             address p = ecrecover(_ethSignedMessageHash, v, r, s);
             if (p != addresses[i]) {
                  revert WrongResolvedAddress(p, addresses[i]);
             }
-
+            if (isHashUsed[_rawMessageHash][p]) {
+                revert HashAlreadyMinted(_rawMessageHash,p);
+            }
+            isHashUsed[_rawMessageHash][p] = true;
             p2pwhitelist[tokenId][p] = true;
             emit TokenInitializedAddress(tokenId, p);
         }
@@ -51,8 +56,8 @@ contract P2PNFT is ERC1155 {
     }
 
     // real message never live on chain due to its size constraint
-    function getMessageHash(uint256 _noParticipant, bytes32 _rawMessageHash) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(_noParticipant, _rawMessageHash));
+    function getMessageHash(address[] memory addresses, bytes32 _rawMessageHash) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(addresses, _rawMessageHash));
     }
     function getEthSignedMessageHash(bytes32 _messageHash)
         public

@@ -6,3 +6,4 @@ compiler:
 dependencies:
   - OpenZeppelin/openzeppelin-contracts@4.6.0
 dev_deployment_artifacts: true
+dotenv: .env

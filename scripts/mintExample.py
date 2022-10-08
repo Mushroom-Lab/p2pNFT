@@ -28,9 +28,9 @@ message = "ac1 love ac2"
 # convert this message to 32bytes
 rawMessageHash = Web3.keccak(text=message)
 
-noOfParticipant = 2
+# noOfParticipant = 2
 
-abiEncoded = eth_abi.encode_abi(['uint256', 'bytes32'], [noOfParticipant, rawMessageHash])
+abiEncoded = eth_abi.encode_abi(['address[]memory', 'bytes32'], [[ac1.address,ac2.address], rawMessageHash])
 hashed = Web3.solidityKeccak(['bytes'], ['0x' + abiEncoded.hex()]).hex()
 
 message = encode_defunct(hexstr=hashed)
@@ -38,8 +38,8 @@ ac1_signed = w3.eth.account.sign_message(message, private_key=ac1_private_key)
 ac2_signed = w3.eth.account.sign_message(message, private_key=ac2_private_key)
 
 # check addresses
-#print(w3.eth.account.recover_message(message, signature=ac1_signed.signature))
-#print(w3.eth.account.recover_message(message, signature=ac2_signed.signature))
+print(w3.eth.account.recover_message(message, signature=ac1_signed.signature))
+print(w3.eth.account.recover_message(message, signature=ac2_signed.signature))
 
 #good example
 tx = P2PNFT[0].initilizeNFT(ac1_signed.signature + ac2_signed.signature, rawMessageHash, noOfParticipant, [ac1.address ,ac2.address], {'from': admin})
