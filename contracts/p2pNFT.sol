@@ -30,7 +30,6 @@ contract P2PNFT is ERC1155 {
         uint256 _noParticipants = addresses.length;
         //require(_signatures.length == _noParticipants * 65, "inadequate signatures");
         uint256 tokenId = _tokenIdCounter.current();
-        _setTokenCid(tokenId, tokenCid);
         for (uint256 i = 0; i < _noParticipants; i++) {
             (uint8 v, bytes32 r, bytes32 s) = signaturesSplit(_signatures, i);
             bytes32 _messageHash = getMessageHash(addresses, _rawMessageHash);
@@ -46,6 +45,7 @@ contract P2PNFT is ERC1155 {
             p2pwhitelist[tokenId][p] = true;
             emit TokenInitializedAddress(tokenId, p);
         }
+        _setTokenCid(tokenId, tokenCid);
         _tokenIdCounter.increment();
         emit TokenInitialized(tokenId, _rawMessageHash);
     }
@@ -62,7 +62,7 @@ contract P2PNFT is ERC1155 {
             abi.encodePacked(
                 "ipfs://",
                 tokenToCid[tokenId],
-                "metadata.json"
+                "/metadata.json"
             )
         );
     }
