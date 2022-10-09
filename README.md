@@ -9,8 +9,8 @@ https://ethereum-magicians.org/t/idea-p2p-soulbound-token-call-for-a-better-name
 ## Deployment on Testnet
 
 ### Goerli Optimism
-https://goerli-optimism.etherscan.io/address/0xe0dfb42d8bfe7727b29c491e218f21d4e2f98fe0
+https://goerli-optimism.etherscan.io/address/0x9A709A7bCf522B90271EdCb3BC026509F827B906
 
 
 ### Mumbai Polygon
-https://mumbai.polygonscan.com/address/0x87a8960dde4715c06790ad62e8b6b5ee1199d22f
+https://mumbai.polygonscan.com/address/0xeda80ea57f251d3eebd674f5de257cf3799e96bf
