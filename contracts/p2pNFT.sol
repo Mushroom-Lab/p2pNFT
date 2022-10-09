@@ -14,17 +14,15 @@ contract P2PNFT is ERC1155 {
 
     // a mapping that map each token => address => canMint
     mapping (uint256 => mapping (address => bool)) public p2pwhitelist;
-    // a mapping thatv map each Hash to addrees => is consumed
+    // a mapping that map each Hash to address => is consumed
     mapping (bytes32 => mapping (address => bool)) public isHashUsed;
 
     event TokenInitializedAddress(uint256 indexed token_Id, address _address);
     event TokenInitialized(uint256 indexed token_Id, bytes32 _rawMessageHash);
 
-    constructor() ERC1155("https://www.myapp123.com") {}
-
+    constructor() ERC1155("ipfs://") {}
 
     // anyone can mint anything as long as they have all the signature from particpiant
-
     function initilizeNFT(bytes memory _signatures, bytes32 _rawMessageHash, address[] memory addresses) external {
         // number of signatures has to match number of participants
         uint256 _noParticipants = addresses.length;
