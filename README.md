@@ -14,3 +14,11 @@ https://goerli-optimism.etherscan.io/address/0x9A709A7bCf522B90271EdCb3BC026509F
 
 ### Mumbai Polygon
 https://mumbai.polygonscan.com/address/0xeda80ea57f251d3eebd674f5de257cf3799e96bf
+
+
+### Example:
+https://testnet.rarible.com/token/polygon/0xeda80ea57f251d3eebd674f5de257cf3799e96bf:2?tab=overview
+
+
+### Workflow:
+<img width="839" alt="Screenshot 2022-10-09 at 9 31 05 AM" src="https://user-images.githubusercontent.com/16856703/194762549-8c7c88cc-6db2-48d1-9ee9-5a17244d6354.png">
