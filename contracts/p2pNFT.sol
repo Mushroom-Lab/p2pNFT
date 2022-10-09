@@ -16,18 +16,21 @@ contract P2PNFT is ERC1155 {
     mapping (uint256 => mapping (address => bool)) public p2pwhitelist;
     // a mapping that map each Hash to address => is consumed
     mapping (bytes32 => mapping (address => bool)) public isHashUsed;
+    // Mapping from token ID to the ipfs cid
+    mapping(uint256 => string) public tokenToCid;
 
     event TokenInitializedAddress(uint256 indexed token_Id, address _address);
     event TokenInitialized(uint256 indexed token_Id, bytes32 _rawMessageHash);
 
-    constructor() ERC1155("ipfs://") {}
+    constructor() ERC1155("") {}
 
     // anyone can mint anything as long as they have all the signature from particpiant
-    function initilizeNFT(bytes memory _signatures, bytes32 _rawMessageHash, address[] memory addresses) external {
+    function initilizeNFT(bytes memory _signatures, bytes32 _rawMessageHash, address[] memory addresses, string memory tokenCid) external {
         // number of signatures has to match number of participants
         uint256 _noParticipants = addresses.length;
         //require(_signatures.length == _noParticipants * 65, "inadequate signatures");
         uint256 tokenId = _tokenIdCounter.current();
+        _setTokenCid(tokenId, tokenCid);
         for (uint256 i = 0; i < _noParticipants; i++) {
             (uint8 v, bytes32 r, bytes32 s) = signaturesSplit(_signatures, i);
             bytes32 _messageHash = getMessageHash(addresses, _rawMessageHash);
@@ -52,6 +55,21 @@ contract P2PNFT is ERC1155 {
         require(balanceOf(to,tokenId) == 0, "already minted");
         super._mint(to, tokenId, 1, "");
     }
+
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        require(tokenId < _tokenIdCounter.current(), "tokenId does not exist");
+        return string(
+            abi.encodePacked(
+                "ipfs://",
+                tokenToCid[tokenId],
+                "metadata.json"
+            )
+        );
+    }
+
+    function _setTokenCid(uint256 tokenId, string memory tokenCid) private {
+         tokenToCid[tokenId] = tokenCid; 
+    } 
 
     // real message never live on chain due to its size constraint
     function getMessageHash(address[] memory addresses, bytes32 _rawMessageHash) public pure returns (bytes32) {

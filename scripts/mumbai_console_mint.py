@@ -21,7 +21,8 @@ ac2 = accounts.add(private_key=ac2_private_key)
 ac3 = accounts.add(private_key=ac3_private_key)
 
 # test message
-message = "bafyreicztgskd5wt6ssc2mkpc4cdtulr44bdgzndvvhryclpnovw2yw3wm"
+cid = "bafyreiau75gwvwtstfrp6ewtfidbgkjmab3gdzloam7nxy4ao6vthhdt4e"
+message = cid
 # convert this message to 32bytes
 rawMessageHash = Web3.keccak(text=message)
 
@@ -39,7 +40,7 @@ print(w3.eth.account.recover_message(message, signature=ac2_signed.signature))
 
 p = P2PNFT.at(address)
 #good example
-tx = p.initilizeNFT(ac1_signed.signature + ac2_signed.signature, rawMessageHash, [ac1.address ,ac2.address], {'from': ac2})
+tx = p.initilizeNFT(ac1_signed.signature + ac2_signed.signature, rawMessageHash, [ac1.address ,ac2.address], cid, {'from': ac2, "gas_price": "100 gwei"})
 print(tx.events)
 print(p.p2pwhitelist(0,ac1))
 print(p.p2pwhitelist(0, ac2))
