@@ -5,8 +5,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "../interfaces/IP2PNFTWallet.sol";
 
 
-error WrongResolvedAddress(address resolved, address targeted);
-error WrongOperatorAddress(address operator, address walletOperator);
+error WrongAdminAddress(address operator, address walletAdmin);
 error HashAlreadyMinted(bytes32 _rawMessageHash, address signer);
 
 contract P2PNFTWallet is ERC1155 {
@@ -65,7 +64,7 @@ contract P2PNFTWallet is ERC1155 {
     // verify signature from operator
     // update whitelist for the OWNER from which the operator represent
     // to map operator to its OWNER we also need their wallet address
-    function initilizeNFTforWallet(bytes memory _signatures, bytes32 _rawMessageHash, address[] memory admins, address[] memory wallets, string memory tokenCid) onlyAdminOrOwner external {
+    function initilizeNFTforWallet(bytes memory _signatures, bytes32 _rawMessageHash, address[] memory wallets, string memory tokenCid) onlyAdminOrOwner external {
         uint256 _noParticipants = admins.length;
         // number of signatures has to match number of participants
         require(_signatures.length == _noParticipants * 65, "inadequate signatures");
@@ -73,13 +72,9 @@ contract P2PNFTWallet is ERC1155 {
         for (uint256 i = 0; i < _noParticipants; i++) {
             address p = recover(_signatures, i,  admins, _rawMessageHash);
             // if the recovered address is not the admin
-            if (p != admins[i]) {
-                 revert WrongResolvedAddress(p, admins[i]);
-            }
-            // if the recovered admin is not the admin specified in the wallet
-            address _targetAdmin = IP2PNFTWallet(wallets[i]).admin();
-            if (p != _targetAdmin) {
-                revert WrongOperatorAddress(p, _targetAdmin);
+            address admin = IP2PNFTWallet(wallets[i]).admin();
+            if (p != admin) {
+                 revert WrongAdminAddress(p, admin);
             }
             // if the wallet already mint this hash
             if (isHashUsed[_rawMessageHash][wallets[i]]) {
