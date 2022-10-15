@@ -11,16 +11,16 @@ from eth_account.messages import encode_defunct
 
 load_dotenv()
 
+#p2pnft = os.getenv('p2pNFT_mumbai')
 p2pnft = os.getenv('p2pNFT_mumbai')
 ac2_private_key = os.getenv("AC2")
 ac2 = accounts.add(private_key=ac2_private_key)
 
 # test message
-message = "bafyreihkxnh7jnxmbzfzkuk2pcz7fncli5tkqjmtjttqzqbxs6rcsvcmpy"
-cid = "bafyreihkxnh7jnxmbzfzkuk2pcz7fncli5tkqjmtjttqzqbxs6rcsvcmpy"
+message = "bafyreigvnhtpiuybtomyskz5biswa4w6zfizsrbvyzkklzn557d2dmo2e4"
+cid = "bafyreigvnhtpiuybtomyskz5biswa4w6zfizsrbvyzkklzn557d2dmo2e4"
 # team hash : bafyreihkxnh7jnxmbzfzkuk2pcz7fncli5tkqjmtjttqzqbxs6rcsvcmpy
-ac1 = "0xd8C19B45061B8fc74136c06Ee5CB464e6aa7CbbA"
-signature = "0xb3bf43ffaef04034616c2646fba8f7c8c296a068c20d4c108f62c8c893fde4e7374020712b8cd83468de5eafbba476137b01a63d303f482b4ac81bc1cdd10c4b1c"
+ac1 = "0xa83CEfd794f060C5AD9Ad8F473d209a26e8EEC2d"
 # convert this message to 32bytes
 rawMessageHash = Web3.keccak(text=message)
 
@@ -30,6 +30,9 @@ hashed = Web3.solidityKeccak(['bytes'], ['0x' + abiEncoded.hex()]).hex()
 
 #0x8f5cfeee1e97fda7ffd139aaef1e16cb26e18ceeae10087faa0717e2f215b5b7?
 message = encode_defunct(hexstr=hashed)
+
+signature = "0x0423dc8fdce875ffb09cb29a4938a4e1f363af90fa23aedb0fbb26ded3857c8b7a43a680bfedf84ee30fbe2196734669c5b22e364d34573bb8ac2f58745c52f41c"
+
 ac1_signed = signature
 ac2_signed = w3.eth.account.sign_message(message, private_key=ac2_private_key)
 
@@ -41,10 +44,11 @@ p = P2PNFT.at(p2pnft)
 #good example
 tx = p.initilizeNFT(HexBytes(ac1_signed) + ac2_signed.signature, rawMessageHash, [ac1 ,ac2.address],cid, {'from': ac2})
 print(tx.events)
-print(p.p2pwhitelist(1,ac1))
-print(p.p2pwhitelist(1, ac2))
+print(p.p2pwhitelist(4,ac1))
+print(p.p2pwhitelist(4, ac2))
 # pass
-p.mint(1, ac1, {'from': ac2})
-p.mint(1, ac2, {'from': ac2})
+tokenid = 4
+p.mint(tokenid, ac1, {'from': ac2})
+p.mint(tokenid, ac2, {'from': ac2})
 print(p.balanceOf(ac1,0))
 
