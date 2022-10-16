@@ -62,7 +62,7 @@ contract P2PNFT is IP2PNFT, ERC1155 {
     }
 
     // anyone can mint anything as long as they have all the signature from particpiant
-    // signature => _messageHash => hash(owners + uid + tokenCid)
+    // signature => ETHSign(_rawMessageHash) = > hash(addresses + uid + tokenCid)
     function initilizeNFT(bytes memory _signatures, address[] memory owners, string memory tokenCid) external {
         bytes32 messageHash = getMessageHash(owners, tokenCid);
         // number of signatures has to match number of participants
@@ -141,7 +141,7 @@ contract P2PNFT is IP2PNFT, ERC1155 {
          tokenToCid[tokenId] = tokenCid; 
     } 
 
-    // recall signature => _rawMessageHash = > hash(addresses + uid + tokenCid)
+    // recall signature => ETHSign(_rawMessageHash) = > hash(addresses + uid + tokenCid)
     function recover(bytes memory _signatures,  uint256 i, address[] memory owners, string memory tokenCid) public view returns (address) {
         bytes32 _ethSignedMessageHash = getMessageHash(owners, tokenCid);
         (uint8 v, bytes32 r, bytes32 s) = signaturesSplit(_signatures, i);
