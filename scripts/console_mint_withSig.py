@@ -15,14 +15,16 @@ load_dotenv()
 p2pnft = os.getenv('p2pNFT_mumbai')
 ac2_private_key = os.getenv("AC2")
 ac2 = accounts.add(private_key=ac2_private_key)
+ac1_private_key = os.getenv("AC1")
+ac1 = accounts.add(private_key=ac1_private_key)
 
 # test message
-message = "bafyreigvnhtpiuybtomyskz5biswa4w6zfizsrbvyzkklzn557d2dmo2e4"
+#message = "bafyreigvnhtpiuybtomyskz5biswa4w6zfizsrbvyzkklzn557d2dmo2e4"
 cid = "bafyreigvnhtpiuybtomyskz5biswa4w6zfizsrbvyzkklzn557d2dmo2e4"
 # team hash : bafyreihkxnh7jnxmbzfzkuk2pcz7fncli5tkqjmtjttqzqbxs6rcsvcmpy
-ac1 = "0xa83CEfd794f060C5AD9Ad8F473d209a26e8EEC2d"
+# ac1 = "0xa83CEfd794f060C5AD9Ad8F473d209a26e8EEC2d"
 # convert this message to 32bytes
-rawMessageHash = Web3.keccak(text=message)
+# rawMessageHash = Web3.keccak(text=message)
 
 abiEncoded = eth_abi.encode_abi(['address[]', 'bytes32'], [[ac1,ac2.address], rawMessageHash])
 # this is what we have to sign

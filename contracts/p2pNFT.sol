@@ -67,7 +67,7 @@ contract P2PNFT is IP2PNFT, ERC1155 {
         bytes32 messageHash = getMessageHash(owners, tokenCid);
         // number of signatures has to match number of participants
         uint256 _noParticipants = owners.length;
-        //require(_signatures.length == _noParticipants * 65, "inadequate signatures");
+        require(_signatures.length == _noParticipants * 65, "inadequate signatures");
         uint256 tokenId = _tokenIdCounter.current();
         for (uint256 i = 0; i < _noParticipants; i++) {
             address p = recover(_signatures, i,  owners, tokenCid);
@@ -154,7 +154,7 @@ contract P2PNFT is IP2PNFT, ERC1155 {
         bytes32 rawMessageHash = keccak256(abi.encode(addresses, uid, tokenCid));
         return getEthSignedMessageHash(rawMessageHash);
     }
-    function getEthSignedMessageHash(bytes32 _rawMessageHash)
+    function getEthSignedMessageHash(bytes32 _rawMessage)
         public
         pure
         returns (bytes32)
@@ -165,7 +165,7 @@ contract P2PNFT is IP2PNFT, ERC1155 {
         */
         return
             keccak256(
-                abi.encodePacked("\x19Ethereum Signed Message:\n32", _rawMessageHash)
+                abi.encodePacked("\x19Ethereum Signed Message:\n32", _rawMessage)
             );
     }
 

@@ -11,5 +11,6 @@ admin = accounts.add(private_key=admin_private_key)
 
 def main():
 #deployment
-    tx=P2PNFT.deploy({'from': admin, "gas_price": "100 gwei"}, publish_source=True)
+    tx=P2PNFTFactory.deploy({'from': admin, "gas_price": "40 gwei"}, publish_source=True)
+    
 

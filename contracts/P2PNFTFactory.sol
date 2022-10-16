@@ -15,7 +15,7 @@ contract P2PNFTFactory is IP2PNFTFactory {
         return allNFTs.length;
     }
 
-    function createNFT(string calldata description) external returns (address p2pNFT) {
+    function createNFT(string memory description) external returns (address p2pNFT) {
         bytes32 uid = keccak256(abi.encode(description));
         require(getNFT[uid] == address(0), 'NFT_EXISTS');
         bytes memory bytecode = type(P2PNFT).creationCode;

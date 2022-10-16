@@ -1,8 +1,8 @@
 const hre = require("hardhat");
 
 async function main() {
-  const p2pNFT = await hre.ethers.getContractFactory("P2PNFT");
-  const lock = await p2pNFT.deploy({ value: 0 });
+  const p2pNFTFactory = await hre.ethers.getContractFactory("P2PNFTFactory");
+  const lock = await p2pNFTFactory.deploy({ value: 0 });
 
   await lock.deployed();
   console.log(
