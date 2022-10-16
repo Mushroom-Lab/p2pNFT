@@ -1,59 +1,129 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity =0.8.11;
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
+
+import "../interfaces/IP2PNFT.sol";
 
 
 error WrongResolvedAddress(address resolved, address targeted);
 error HashAlreadyMinted(bytes32 _rawMessageHash, address signer);
 
-contract P2PNFT is ERC1155 {
+contract P2PNFT is IP2PNFT, ERC1155 {
     using Counters
     for Counters.Counter;
     Counters.Counter private _tokenIdCounter;
 
+    address public factory;
+    // unique identifier from dscription to identify eacch P2PNFT in factory.
+    string public constant name = "P2PNFT";
+    bytes32 public uid;
+    string public description;
+
+    bytes32 public immutable DOMAIN_SEPARATOR;
+    // keccak256("Permit(address owner,address delegatee,uint256 nonce)");
+    bytes32 public constant PERMIT_TYPEHASH = 0xb386f97c45a5e4526fa8514e4421b36a232e2dfcf252547ffc9d886063bd3842;
     // a mapping that map each token => address => canMint
     mapping (uint256 => mapping (address => bool)) public p2pwhitelist;
-    // a mapping that map each Hash to address => is consumed
+    // a mapping that map each Hash to address => is consumed to avoid replay
     mapping (bytes32 => mapping (address => bool)) public isHashUsed;
+    // delegationMap, map owner to their delegatee.
+    mapping (address => address) public delegation;
+    // nonces to avoid replay on permit
+    mapping(address => uint) public nonces;
     // Mapping from token ID to the ipfs cid
     mapping(uint256 => string) public tokenToCid;
 
     event TokenInitializedAddress(uint256 indexed token_Id, address _address);
-    event TokenInitialized(uint256 indexed token_Id, bytes32 _rawMessageHash);
+    event TokenInitialized(uint256 indexed token_Id, string tokenCid);
+    event NewDelegation(address owner, address delegatee);
 
-    constructor() ERC1155("") {}
+    constructor() ERC1155("") {
+        uint chainId;
+        assembly {
+            chainId := chainid()
+        }
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
+                keccak256(bytes(name)),
+                keccak256(bytes('1')),
+                chainId,
+                address(this)
+            )
+        );
+        factory = msg.sender;
+    }
+
+    function initialize(string memory _description) external {
+        require(msg.sender == factory, 'FORBIDDEN'); // sufficient check
+        description = _description;
+        uid = keccak256(abi.encode(_description));
+    }
 
     // anyone can mint anything as long as they have all the signature from particpiant
-    function initilizeNFT(bytes memory _signatures, bytes32 _rawMessageHash, address[] memory addresses, string memory tokenCid) external {
+    // signature => _messageHash => hash(owners + uid + tokenCid)
+    function initilizeNFT(bytes memory _signatures, address[] memory owners, string memory tokenCid) external {
+        bytes32 messageHash = getMessageHash(owners, tokenCid);
         // number of signatures has to match number of participants
-        uint256 _noParticipants = addresses.length;
+        uint256 _noParticipants = owners.length;
         //require(_signatures.length == _noParticipants * 65, "inadequate signatures");
         uint256 tokenId = _tokenIdCounter.current();
         for (uint256 i = 0; i < _noParticipants; i++) {
-            (uint8 v, bytes32 r, bytes32 s) = signaturesSplit(_signatures, i);
-            bytes32 _messageHash = getMessageHash(addresses, _rawMessageHash);
-            bytes32 _ethSignedMessageHash = getEthSignedMessageHash(_messageHash);
-            address p = ecrecover(_ethSignedMessageHash, v, r, s);
-            if (p != addresses[i]) {
-                 revert WrongResolvedAddress(p, addresses[i]);
+            address p = recover(_signatures, i,  owners, tokenCid);
+
+            address owner = owners[i];
+            address delegatee = delegation[owner];
+            
+            // if there is no delegatee, default to the owner.
+            if (delegatee == address(0)) {
+                delegatee = owner;
             }
-            if (isHashUsed[_rawMessageHash][p]) {
-                revert HashAlreadyMinted(_rawMessageHash,p);
+            // if the resolved address from signature does not match the delegatee
+            if (p != delegatee) {
+                 revert WrongResolvedAddress(p, delegatee);
             }
-            isHashUsed[_rawMessageHash][p] = true;
-            p2pwhitelist[tokenId][p] = true;
-            emit TokenInitializedAddress(tokenId, p);
+            // if the owner has already minted this hash
+            if (isHashUsed[messageHash][owner]) {
+                revert HashAlreadyMinted(messageHash, owner);
+            }
+            isHashUsed[messageHash][owner] = true;
+            p2pwhitelist[tokenId][owner] = true;
+            emit TokenInitializedAddress(tokenId, owner);
         }
         _setTokenCid(tokenId, tokenCid);
         _tokenIdCounter.increment();
-        emit TokenInitialized(tokenId, _rawMessageHash);
+        emit TokenInitialized(tokenId, tokenCid);
     }
 
     function mint(uint256 tokenId, address to) external {
         require(p2pwhitelist[tokenId][to], "not whitelist");
         require(balanceOf(to,tokenId) == 0, "already minted");
         super._mint(to, tokenId, 1, "");
+    }
+
+    // allow change of this mapping using off-chain signature similar to EIP2612
+    function permit(address owner, address delegatee, uint8 v, bytes32 r, bytes32 s) external {
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                '\x19\x01',
+                DOMAIN_SEPARATOR,
+                keccak256(abi.encode(PERMIT_TYPEHASH, owner, delegatee, nonces[owner]++))
+            )
+        );
+        address recoveredAddress = ecrecover(digest, v, r, s);
+        require(recoveredAddress != address(0) && recoveredAddress == owner, "INVALID_SIGNATURE");
+        _setDelegatee(owner, delegatee);
+    } 
+
+    function setDelegatee(address delegatee) external returns(bool) {
+        _setDelegatee(msg.sender, delegatee);
+        return true;
+    }
+
+    function _setDelegatee(address owner, address delegatee) private {
+        delegation[owner] = delegatee;
+        emit NewDelegation(owner, delegatee);
     }
 
     function uri(uint256 tokenId) public view override returns (string memory) {
@@ -71,11 +141,20 @@ contract P2PNFT is ERC1155 {
          tokenToCid[tokenId] = tokenCid; 
     } 
 
-    // real message never live on chain due to its size constraint
-    function getMessageHash(address[] memory addresses, bytes32 _rawMessageHash) public pure returns (bytes32) {
-        return keccak256(abi.encode(addresses, _rawMessageHash));
+    // recall signature => _rawMessageHash = > hash(addresses + uid + tokenCid)
+    function recover(bytes memory _signatures,  uint256 i, address[] memory owners, string memory tokenCid) public view returns (address) {
+        bytes32 _ethSignedMessageHash = getMessageHash(owners, tokenCid);
+        (uint8 v, bytes32 r, bytes32 s) = signaturesSplit(_signatures, i);
+        address p = ecrecover(_ethSignedMessageHash, v, r, s);
+        return p;
     }
-    function getEthSignedMessageHash(bytes32 _messageHash)
+
+    // real message never live on chain due to its size constraint
+    function getMessageHash(address[] memory addresses, string memory tokenCid) public view returns (bytes32) {
+        bytes32 rawMessageHash = keccak256(abi.encode(addresses, uid, tokenCid));
+        return getEthSignedMessageHash(rawMessageHash);
+    }
+    function getEthSignedMessageHash(bytes32 _rawMessageHash)
         public
         pure
         returns (bytes32)
@@ -86,7 +165,7 @@ contract P2PNFT is ERC1155 {
         */
         return
             keccak256(
-                abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash)
+                abi.encodePacked("\x19Ethereum Signed Message:\n32", _rawMessageHash)
             );
     }
 
