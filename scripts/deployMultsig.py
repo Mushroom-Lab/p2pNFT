@@ -7,9 +7,7 @@ from dotenv import load_dotenv
 
 import eth_abi
 from hexbytes import HexBytes
-from web3.auto import w3
-from web3 import Web3
-from eth_account.messages import encode_defunct, encode_structured_data
+#from eth_account.messages import encode_defunct, encode_structured_data
 
 # deploy 1 with 1 owner
 

@@ -1,0 +1,3 @@
+#brownie networks modify [networkName] name=[newName]
+# brownie networks modify goerli explorer=https://api-goerli.etherscan.io/​api
+# brownie networks modify goerli host=https://eth-goerli.alchemyapi.io/v2/O6iUNtSqOkH2cHeU4dGgZzISwJ4ThFHQ
